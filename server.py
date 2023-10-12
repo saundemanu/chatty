@@ -22,12 +22,17 @@ async def handle_websocket(websocket, path):
 
         # add client to passcode group with username 
         connected_clients[passcode][username] = websocket
-        connect_success = f'You have successfully connected to room {passcode}'
+        room_clients = connected_clients.get(passcode, {})
+
+        active_users_in_room = []
+        for user in room_clients.keys: 
+            active_users_in_room.append(user, " ")
+
+        connect_success = f'You have successfully connected to room {passcode} \n Users in room: {active_users_in_room}'
         # Notify the client that they have successfully connected
         await send_message(websocket, connect_success)
         
         # Notify existing clients that a new user has joined
-        room_clients = connected_clients.get(passcode, {})
         message_to_existing_clients = f'{username} has joined the room'
         await asyncio.gather(
             *[send_message(client, message_to_existing_clients) for client in room_clients.values() if client != websocket]
@@ -56,8 +61,9 @@ async def handle_websocket(websocket, path):
 
 
 async def main():
-    server = await websockets.serve(handle_websocket, 'localhost', 8000)
-    print("Server running.")
+    port = input("Enter connection port: ")
+    server = await websockets.serve(handle_websocket, 'localhost', port)
+    print(f"Server running @ port: {port}")
     await server.wait_closed()
 
 asyncio.run(main())
