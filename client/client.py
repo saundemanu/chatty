@@ -1,18 +1,31 @@
-import asyncio 
+import asyncio
 import websockets
 
 async def handle_websocket():
-    async with websockets.connect('ws://localhost:8000') as websocket:
-       while True:
-           message = input("Enter a message (or exit() to leave chat):")
-           
-           if message == "exit()":
-               break
-           
-           await websocket.send(message)
+    """process websocket connection to server, send and recieve messages"""
+    passcode = input("Enter room code: ")
+    username = input("Enter username: ")
+    async with websockets.connect(f'ws://localhost:8000') as websocket:
+        try: 
+            await websocket.send(f'{passcode}::{username}')
+            
+            # Define a function to handle receiving messages
+            async def receive():
+                while True:
+                    message = await websocket.recv()
+                    print(f'Received: {message}')
+            
+            # Create a task to handle receiving messages
+            asyncio.create_task(receive())
+            while True:
+                message = input("Enter a message (or /leave to leave chat):")
 
-           response = await websocket.recv()
-           print(f'Recieved: {response}')
+                if message == "/leave":
+                    break
 
-# Run the asyncio event loop
-asyncio.get_event_loop().run_until_complete(handle_websocket())
+                await websocket.send(message)
+
+        except websockets.exceptions.ConnectionClosed: 
+            print("Connection terminated.")
+if __name__ == '__main__':
+    asyncio.run(handle_websocket())
